@@ -25,10 +25,6 @@ const serviceMap = {
     target: process.env.TICKET_SERVICE_URL || "http://localhost:4003",
     rewriteTo: "/cases",
   },
-  notifications: {
-    target: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:4004",
-    rewriteTo: "/notifications",
-  },
 };
 
 app.use(cors());

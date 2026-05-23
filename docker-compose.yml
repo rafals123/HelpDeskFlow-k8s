@@ -77,18 +77,23 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-helpdeskflow}
       DB_USER: ${DB_USER:-helpdeskflow}
       DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
       NOTIFICATION_SERVICE_PORT: 4004
-      SMTP_FROM: ${SMTP_FROM:-HelpDeskFlow <your-gmail@gmail.com>}
+      NOTIFICATION_MODE: ${NOTIFICATION_MODE:-smtp}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_FROM: ${SMTP_FROM:-HelpDeskFlow <noreply@helpdeskflow.local>}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-    ports:
-      - "4004:4004"
 
   ticket-service:
     build:
@@ -107,6 +112,7 @@ services:
       DB_NAME: ${DB_NAME:-helpdeskflow}
       DB_USER: ${DB_USER:-helpdeskflow}
       DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       TICKET_SERVICE_PORT: 4003
@@ -127,14 +133,11 @@ services:
         condition: service_started
       ticket-service:
         condition: service_started
-      notification-service:
-        condition: service_started
     environment:
       API_GATEWAY_PORT: 8080
       AUTH_SERVICE_URL: http://auth-service:4001
       USER_SERVICE_URL: http://user-service:4002
       TICKET_SERVICE_URL: http://ticket-service:4003
-      NOTIFICATION_SERVICE_URL: http://notification-service:4004
     ports:
       - "8080:8080"
 
@@ -155,6 +158,14 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8080/api
     ports:
       - "3000:3000"
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: helpdeskflow-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   postgres_data:

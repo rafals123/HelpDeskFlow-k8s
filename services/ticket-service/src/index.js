@@ -209,12 +209,15 @@ async function buildCaseResponse(caseId) {
 async function sendStatusChangeNotification(caseRecord, oldStatus, newStatus) {
   const notificationUrl =
     process.env.NOTIFICATION_SERVICE_URL || "http://localhost:4004";
+  const internalServiceToken =
+    process.env.INTERNAL_SERVICE_TOKEN || "change-me-internal-token";
 
   try {
-    await fetch(`${notificationUrl}/notifications/status-change`, {
+    const response = await fetch(`${notificationUrl}/notifications/status-change`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-internal-token": internalServiceToken,
       },
       body: JSON.stringify({
         caseId: caseRecord.id,
@@ -226,6 +229,13 @@ async function sendStatusChangeNotification(caseRecord, oldStatus, newStatus) {
         newStatus,
       }),
     });
+
+    if (!response.ok) {
+      const responseBody = await response.text();
+      console.error(
+        `Status notification request failed with ${response.status}: ${responseBody || "No response body."}`,
+      );
+    }
   } catch (error) {
     console.error("Status notification failed", error);
   }

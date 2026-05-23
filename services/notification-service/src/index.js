@@ -11,6 +11,8 @@ loadEnv();
 
 const app = express();
 const port = Number(process.env.NOTIFICATION_SERVICE_PORT || 4004);
+const notificationMode = (process.env.NOTIFICATION_MODE || "simulation").toLowerCase();
+const internalServiceToken = process.env.INTERNAL_SERVICE_TOKEN || "change-me-internal-token";
 
 app.use(cors());
 app.use(express.json());
@@ -20,20 +22,46 @@ app.get("/health", (_req, res) => {
 });
 
 function getTransporter() {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  if (notificationMode !== "smtp") {
     return null;
   }
 
+  const host = process.env.SMTP_HOST?.trim();
+  const port = Number(process.env.SMTP_PORT || 0);
+
+  if (!host || !port) {
+    throw new Error("SMTP_HOST and SMTP_PORT must be set when NOTIFICATION_MODE=smtp.");
+  }
+
+  const smtpUser = process.env.SMTP_USER?.trim();
+  const smtpPass = process.env.SMTP_PASS?.trim();
+  const auth =
+    smtpUser && smtpPass
+      ? {
+          user: smtpUser,
+          pass: smtpPass,
+        }
+      : undefined;
+
   return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    host,
+    port,
+    secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+    auth,
   });
 }
 
-app.post("/notifications/status-change", async (req, res) => {
+function authenticateInternalRequest(req, res, next) {
+  const providedToken = req.get("x-internal-token");
+
+  if (providedToken !== internalServiceToken) {
+    return res.status(403).json({ message: "Forbidden." });
+  }
+
+  return next();
+}
+
+app.post("/notifications/status-change", authenticateInternalRequest, async (req, res) => {
   const {
     caseId,
     caseNumber,
@@ -73,7 +101,7 @@ app.post("/notifications/status-change", async (req, res) => {
       deliveryStatus = "SENT";
     } else {
       console.log(
-        `Simulated Gmail notification for ${recipientEmail}: ${caseNumber} ${oldStatus} -> ${newStatus}`,
+        `Simulated notification for ${recipientEmail}: ${caseNumber} ${oldStatus} -> ${newStatus}`,
       );
     }
   } catch (error) {
@@ -106,6 +134,15 @@ app.post("/notifications/status-change", async (req, res) => {
 async function start() {
   try {
     await testConnection();
+
+    if (!["simulation", "smtp"].includes(notificationMode)) {
+      throw new Error("NOTIFICATION_MODE must be either simulation or smtp.");
+    }
+
+    if (notificationMode === "smtp") {
+      getTransporter();
+    }
+
     app.listen(port, () => {
       console.log(`Notification service listening on http://localhost:${port}`);
     });
