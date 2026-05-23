@@ -26,10 +26,7 @@ body {
 body {
   min-height: 100%;
   color: var(--foreground);
-  background:
-    radial-gradient(circle at top left, rgba(255, 196, 141, 0.35), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(40, 137, 147, 0.18), transparent 26%),
-    linear-gradient(180deg, #f8f1ea 0%, #efe5dc 100%);
+  background: #efe8e0;
   font-family: var(--font-display), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

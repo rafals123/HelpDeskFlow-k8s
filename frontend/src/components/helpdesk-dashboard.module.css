@@ -42,6 +42,7 @@
   display: grid;
   gap: 14px;
   align-content: start;
+  min-width: 0;
 }
 
 .heroMeta div {
@@ -49,6 +50,7 @@
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 0;
 }
 
 .heroMeta span,
@@ -94,8 +96,8 @@
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
@@ -103,6 +105,16 @@
 .mainPanel {
   display: grid;
   gap: 20px;
+  min-width: 0;
+  position: relative;
+}
+
+.sidebar {
+  z-index: 1;
+}
+
+.mainPanel {
+  z-index: 0;
 }
 
 .panel,
@@ -110,8 +122,12 @@
   border-radius: 24px;
   border: 1px solid var(--border-soft);
   background: rgba(255, 251, 247, 0.86);
-  box-shadow: 0 18px 50px rgba(65, 45, 26, 0.08);
+  box-shadow: 0 10px 26px rgba(65, 45, 26, 0.08);
   backdrop-filter: blur(14px);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .panel {
@@ -130,6 +146,14 @@
   align-items: start;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panelHeading > *,
+.subPanelHeading > *,
+.detailHeader > *,
+.sessionCard > * {
+  min-width: 0;
 }
 
 .panelHeading h2,
@@ -253,6 +277,10 @@
   align-items: center;
 }
 
+.sessionCard button {
+  flex-shrink: 0;
+}
+
 .sessionCard strong {
   display: block;
   margin-top: 4px;
@@ -312,6 +340,12 @@
   text-align: left;
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(20, 51, 86, 0.08);
+  flex-wrap: wrap;
+}
+
+.caseItem > *,
+.caseItemActive > * {
+  min-width: 0;
 }
 
 .caseItemActive {
@@ -337,6 +371,7 @@
 .detailBody {
   display: grid;
   gap: 22px;
+  min-width: 0;
 }
 
 .detailHeader {
@@ -356,6 +391,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .infoGrid,
@@ -363,6 +399,7 @@
 .columns {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .infoGrid {
@@ -391,6 +428,7 @@
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.74);
   border: 1px solid rgba(20, 51, 86, 0.08);
+  min-width: 0;
 }
 
 .timelineItem div {
@@ -411,9 +449,20 @@
   background: rgba(20, 51, 86, 0.04);
 }
 
-@media (max-width: 1100px) {
+.hero h1,
+.lead,
+.detailHeader p,
+.infoGrid p,
+.timelineItem p,
+.emptyState,
+.emptyDetail {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1240px) {
   .hero,
   .grid,
+  .infoGrid,
   .columns,
   .actionsGrid {
     grid-template-columns: 1fr;
@@ -421,6 +470,26 @@
 
   .hero h1 {
     max-width: none;
+  }
+
+  .tagGroup {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1100px) {
+  .detailHeader,
+  .sessionCard,
+  .panelHeading,
+  .subPanelHeading,
+  .caseItem,
+  .caseItemActive {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .caseMeta {
+    justify-items: start;
   }
 }
 
@@ -430,10 +499,6 @@
   .hero {
     padding: 18px;
     border-radius: 22px;
-  }
-
-  .infoGrid {
-    grid-template-columns: 1fr;
   }
 
   .detailHeader,
