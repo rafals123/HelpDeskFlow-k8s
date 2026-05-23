@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helpdeskflow-config
+  namespace: helpdeskflow
+  labels:
+    app.kubernetes.io/name: helpdeskflow
+    app.kubernetes.io/part-of: helpdeskflow
+data:
+  DB_HOST: helpdeskflow-db
+  DB_PORT: "5432"
+  DB_NAME: helpdeskflow
+  DB_USER: helpdeskflow
+  API_GATEWAY_PORT: "8080"
+  AUTH_SERVICE_PORT: "4001"
+  USER_SERVICE_PORT: "4002"
+  TICKET_SERVICE_PORT: "4003"
+  NOTIFICATION_SERVICE_PORT: "4004"
+  AUTH_SERVICE_URL: http://auth-service:4001
+  USER_SERVICE_URL: http://user-service:4002
+  TICKET_SERVICE_URL: http://ticket-service:4003
+  NOTIFICATION_SERVICE_URL: http://notification-service:4004
+  NEXT_PUBLIC_API_URL: http://helpdeskflow.local/api
+  JWT_EXPIRES_IN: 8h
+  NOTIFICATION_MODE: smtp
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  SMTP_SECURE: "false"
+  SMTP_FROM: HelpDeskFlow <noreply@helpdeskflow.local>
+  SEED_SUPPORT_EMAIL: support@helpdeskflow.local
+  SEED_ADMIN_EMAIL: admin@helpdeskflow.local

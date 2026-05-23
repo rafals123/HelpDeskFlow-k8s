@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: helpdeskflow-db
+  namespace: helpdeskflow
+  labels:
+    app.kubernetes.io/name: helpdeskflow-db
+    app.kubernetes.io/part-of: helpdeskflow
+spec:
+  serviceName: helpdeskflow-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: helpdeskflow-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: helpdeskflow-db
+        app.kubernetes.io/part-of: helpdeskflow
+    spec:
+      containers:
+        - name: postgres
+          image: rafals12390/helpdeskflow-db:v0.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: helpdeskflow-config
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: helpdeskflow-config
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: helpdeskflow-secrets
+                  key: DB_PASSWORD
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+            - name: db-init
+              mountPath: /docker-entrypoint-initdb.d/001-init.sql
+              subPath: 001-init.sql
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: helpdeskflow-db-pvc
+        - name: db-init
+          configMap:
+            name: helpdeskflow-db-init
