@@ -1,0 +1,10 @@
+{
+  "name": "@helpdeskflow/shared",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  }
+}

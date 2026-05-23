@@ -1,0 +1,160 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: infra/db/Dockerfile
+    image: helpdeskflow-db:local
+    container_name: helpdeskflow-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-helpdeskflow}
+      POSTGRES_USER: ${DB_USER:-helpdeskflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-helpdeskflow} -d ${DB_NAME:-helpdeskflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: helpdeskflow-auth-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-helpdeskflow}
+      DB_USER: ${DB_USER:-helpdeskflow}
+      DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      AUTH_SERVICE_PORT: 4001
+      SEED_SUPPORT_EMAIL: ${SEED_SUPPORT_EMAIL:-support@helpdeskflow.local}
+      SEED_SUPPORT_PASSWORD: ${SEED_SUPPORT_PASSWORD:-Support123!}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@helpdeskflow.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin123!}
+    ports:
+      - "4001:4001"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: helpdeskflow-user-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-helpdeskflow}
+      DB_USER: ${DB_USER:-helpdeskflow}
+      DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      USER_SERVICE_PORT: 4002
+    ports:
+      - "4002:4002"
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: helpdeskflow-notification-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-helpdeskflow}
+      DB_USER: ${DB_USER:-helpdeskflow}
+      DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      NOTIFICATION_SERVICE_PORT: 4004
+      SMTP_FROM: ${SMTP_FROM:-HelpDeskFlow <your-gmail@gmail.com>}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    ports:
+      - "4004:4004"
+
+  ticket-service:
+    build:
+      context: .
+      dockerfile: services/ticket-service/Dockerfile
+    container_name: helpdeskflow-ticket-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-helpdeskflow}
+      DB_USER: ${DB_USER:-helpdeskflow}
+      DB_PASSWORD: ${DB_PASSWORD:-helpdeskflow}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      TICKET_SERVICE_PORT: 4003
+      NOTIFICATION_SERVICE_URL: http://notification-service:4004
+    ports:
+      - "4003:4003"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: helpdeskflow-api-gateway
+    restart: unless-stopped
+    depends_on:
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      ticket-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    environment:
+      API_GATEWAY_PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:4001
+      USER_SERVICE_URL: http://user-service:4002
+      TICKET_SERVICE_URL: http://ticket-service:4003
+      NOTIFICATION_SERVICE_URL: http://notification-service:4004
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    container_name: helpdeskflow-frontend
+    restart: unless-stopped
+    depends_on:
+      api-gateway:
+        condition: service_started
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

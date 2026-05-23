@@ -1,0 +1,16 @@
+node_modules
+.env
+.DS_Store
+
+frontend/.next
+frontend/.env.local
+
+services/*/node_modules
+packages/*/node_modules
+
+docker-data
+
+docs/*
+
+Wytyczne
+README.pdf

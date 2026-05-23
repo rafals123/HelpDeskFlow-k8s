@@ -1,0 +1,29 @@
+{
+  "name": "helpdeskflow",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:db && npm run dev:services",
+    "dev:services": "concurrently -k -n frontend,gateway,auth,users,tickets,notify -c blue,green,magenta,cyan,yellow,red \"npm run dev -w @helpdeskflow/frontend\" \"npm run dev -w @helpdeskflow/api-gateway\" \"npm run dev -w @helpdeskflow/auth-service\" \"npm run dev -w @helpdeskflow/user-service\" \"npm run dev -w @helpdeskflow/ticket-service\" \"npm run dev -w @helpdeskflow/notification-service\"",
+    "dev:db": "docker compose up -d db",
+    "stop:db": "docker compose stop db",
+    "db:logs": "docker compose logs -f db",
+    "db:down": "docker compose down",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up --build -d",
+    "docker:logs": "docker compose logs -f --tail=100",
+    "docker:stop": "docker compose stop",
+    "docker:down": "docker compose down",
+    "docker:publish": "./scripts/publish-images.sh",
+    "docker:inspect": "./scripts/inspect-images.sh",
+    "lint": "npm run lint -w @helpdeskflow/frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
